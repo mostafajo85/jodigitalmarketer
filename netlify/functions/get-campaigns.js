@@ -11,6 +11,21 @@ exports.handler = async (event) => {
     let client;
 
     try {
+        // Check if DATABASE_URL is configured
+        if (!process.env.DATABASE_URL) {
+            return {
+                statusCode: 503,
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    error: 'Database not configured',
+                    message: 'Please add Neon Database integration in Netlify Dashboard',
+                    campaigns: []
+                })
+            };
+        }
+
         // Connect to database
         client = new Client({
             connectionString: process.env.DATABASE_URL,
@@ -23,7 +38,7 @@ exports.handler = async (event) => {
         // Get all campaigns
         const result = await client.query(
             `SELECT id, product_name, description, language, brand_vibe, created_at, updated_at
-       FROM campaigns 
+       FROM campaigns
        ORDER BY created_at DESC`
         );
 
@@ -42,7 +57,8 @@ exports.handler = async (event) => {
         return {
             statusCode: 500,
             body: JSON.stringify({
-                error: error.message || 'Failed to fetch campaigns'
+                error: error.message || 'Failed to fetch campaigns',
+                campaigns: []
             })
         };
     } finally {

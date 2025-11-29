@@ -67,10 +67,22 @@ export const getCampaigns = async (): Promise<SavedCampaign[]> => {
 
         if (!response.ok) {
             const error = await response.json();
+
+            // If database not configured, throw specific error
+            if (response.status === 503) {
+                throw new Error(error.message || 'Database not configured');
+            }
+
             throw new Error(error.error || 'Failed to fetch campaigns');
         }
 
         const data = await response.json();
+
+        // Handle case where campaigns might be undefined
+        if (!data.campaigns) {
+            return [];
+        }
+
         return data.campaigns.map((c: any) => ({
             id: c.id,
             productName: c.product_name,

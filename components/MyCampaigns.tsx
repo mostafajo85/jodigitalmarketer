@@ -24,9 +24,17 @@ const MyCampaigns: React.FC<Props> = ({ lang, onLoadCampaign }) => {
             setError('');
             const data = await getCampaigns();
             setCampaigns(data);
-        } catch (err) {
+        } catch (err: any) {
             console.error('Error loading campaigns:', err);
-            setError(lang === 'ar' ? 'فشل تحميل الحملات' : 'Failed to load campaigns');
+
+            // Check if it's a database configuration error
+            if (err.message?.includes('Database not configured')) {
+                setError(lang === 'ar'
+                    ? 'قاعدة البيانات غير مفعلة. يرجى ربط Neon Database من لوحة تحكم Netlify'
+                    : 'Database not configured. Please add Neon Database integration in Netlify Dashboard');
+            } else {
+                setError(lang === 'ar' ? 'فشل تحميل الحملات' : 'Failed to load campaigns');
+            }
         } finally {
             setIsLoading(false);
         }
@@ -117,7 +125,7 @@ const MyCampaigns: React.FC<Props> = ({ lang, onLoadCampaign }) => {
         return (
             <div className="max-w-7xl mx-auto px-6">
                 <div className="bg-red-900/20 border border-red-500/50 rounded-xl p-6 text-center">
-                    <p className="text-red-400">{error}</p>
+                    <p className="text-red-400 whitespace-pre-line">{error}</p>
                 </div>
             </div>
         );
