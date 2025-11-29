@@ -1,13 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { CampaignInputs, GeneratedAsset, Language } from './types';
 import { generateCampaignPrompts } from './services/openaiService';
+import { saveCampaign } from './services/databaseService';
 import CampaignForm from './components/CampaignForm';
 import AssetList from './components/AssetList';
-import { Zap, Globe } from 'lucide-react';
+import MyCampaigns from './components/MyCampaigns';
+import { Zap, Globe, FolderOpen } from 'lucide-react';
 
 const App: React.FC = () => {
+  const [view, setView] = useState<'home' | 'campaigns'>('home');
   const [step, setStep] = useState<'input' | 'results'>('input');
   const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveMessage, setSaveMessage] = useState<string>('');
   const [inputs, setInputs] = useState<CampaignInputs | null>(null);
   const [assets, setAssets] = useState<GeneratedAsset[]>([]);
   const [consistencyGuide, setConsistencyGuide] = useState<string>('');
@@ -23,11 +28,25 @@ const App: React.FC = () => {
   const handleFormSubmit = async (formInputs: CampaignInputs) => {
     setInputs(formInputs);
     setIsLoading(true);
+    setSaveMessage('');
     try {
       const result = await generateCampaignPrompts(formInputs, lang);
       setAssets(result.assets);
       setConsistencyGuide(result.consistencyGuide || '');
       setStep('results');
+
+      // Auto-save campaign
+      setIsSaving(true);
+      try {
+        await saveCampaign(formInputs, result.assets, result.consistencyGuide || '');
+        setSaveMessage(lang === 'ar' ? '✅ تم حفظ الحملة بنجاح!' : '✅ Campaign saved successfully!');
+        setTimeout(() => setSaveMessage(''), 5000);
+      } catch (saveError) {
+        console.error('Save error:', saveError);
+        setSaveMessage(lang === 'ar' ? '⚠️ فشل حفظ الحملة' : '⚠️ Failed to save campaign');
+      } finally {
+        setIsSaving(false);
+      }
     } catch (error) {
       alert(lang === 'ar' ? "فشل في إنشاء الحملة. يرجى المحاولة مرة أخرى." : "Failed to create campaign. Please try again.");
       console.error(error);
@@ -45,6 +64,15 @@ const App: React.FC = () => {
     setAssets([]);
     setConsistencyGuide('');
     setInputs(null);
+    setSaveMessage('');
+  };
+
+  const handleLoadCampaign = (campaignData: { inputs: CampaignInputs; assets: GeneratedAsset[]; consistencyGuide: string }) => {
+    setInputs(campaignData.inputs);
+    setAssets(campaignData.assets);
+    setConsistencyGuide(campaignData.consistencyGuide);
+    setStep('results');
+    setView('home');
   };
 
   const toggleLanguage = () => {
@@ -57,9 +85,11 @@ const App: React.FC = () => {
       titleHighlight: 'Marketer',
       subtitle: 'Pro',
       settings: 'الإعدادات',
+      myCampaigns: 'حملاتي',
+      home: 'الرئيسية',
       heroTitle: 'صمّم إطلاقك',
       heroTitleHighlight: 'المثالي',
-      heroDesc: 'أدخل فقط اسم ووصف منتجك. سنقوم تلقائياً بتحليل الفكرة واستنتاج الجمهور والألوان وإنشاء 11 أصل تسويقي متكامل.',
+      heroDesc: 'أدخل فقط اسم ووصف منتجك. سنقوم تلقائياً بتحليل الفكرة واستنتاج الجمهور والألوان وإنشاء 14 أصل تسويقي متكامل.',
       footer: 'Designed & Engineered by Mostafa JoOo © 2025'
     },
     en: {
@@ -67,9 +97,11 @@ const App: React.FC = () => {
       titleHighlight: 'Marketer',
       subtitle: 'Pro',
       settings: 'Settings',
+      myCampaigns: 'My Campaigns',
+      home: 'Home',
       heroTitle: 'Design Your Perfect',
       heroTitleHighlight: 'Launch',
-      heroDesc: 'Just enter your product name and description. We will automatically analyze the idea, infer audience & colors, and generate 11 complete marketing assets.',
+      heroDesc: 'Just enter your product name and description. We will automatically analyze the idea, infer audience & colors, and generate 14 complete marketing assets.',
       footer: 'Designed & Engineered by Mostafa JoOo © 2025'
     }
   };
@@ -96,7 +128,14 @@ const App: React.FC = () => {
             </span>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setView(view === 'home' ? 'campaigns' : 'home')}
+              className="flex items-center gap-2 text-xs font-semibold text-gray-400 hover:text-white transition-colors border border-nano-800 px-3 py-1.5 rounded-full hover:border-banana-400"
+            >
+              <FolderOpen size={14} />
+              {view === 'home' ? t.myCampaigns : t.home}
+            </button>
             <button
               onClick={toggleLanguage}
               className="flex items-center gap-2 text-xs font-semibold text-gray-400 hover:text-white transition-colors border border-nano-800 px-3 py-1.5 rounded-full hover:border-banana-400"
@@ -110,7 +149,17 @@ const App: React.FC = () => {
 
       {/* Main Content */}
       <main className="flex-grow pt-10">
-        {step === 'input' ? (
+        {saveMessage && (
+          <div className="max-w-7xl mx-auto px-6 mb-4">
+            <div className={`p-3 rounded-lg text-sm text-center ${saveMessage.includes('✅') ? 'bg-green-900/20 border border-green-500/50 text-green-400' : 'bg-yellow-900/20 border border-yellow-500/50 text-yellow-400'
+              }`}>
+              {saveMessage}
+            </div>
+          </div>
+        )}
+        {view === 'campaigns' ? (
+          <MyCampaigns lang={lang} onLoadCampaign={handleLoadCampaign} />
+        ) : step === 'input' ? (
           <div className="flex flex-col items-center justify-center min-h-[80vh] px-4">
             <div className="text-center mb-10 space-y-4 max-w-2xl animate-fade-in-up">
               <h1 className="text-4xl md:text-6xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-white via-gray-200 to-gray-500 tracking-tight leading-tight">
