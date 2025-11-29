@@ -1,8 +1,7 @@
 -- Nano Marketer Pro Database Schema
--- PostgreSQL Schema for Neon Database
+-- Simple version without comments for Neon Console
 
--- Table: campaigns
--- Stores marketing campaigns created by users
+-- Create campaigns table
 CREATE TABLE IF NOT EXISTS campaigns (
   id SERIAL PRIMARY KEY,
   product_name VARCHAR(255) NOT NULL,
@@ -14,8 +13,7 @@ CREATE TABLE IF NOT EXISTS campaigns (
   updated_at TIMESTAMP DEFAULT NOW()
 );
 
--- Table: assets
--- Stores individual marketing assets for each campaign
+-- Create assets table
 CREATE TABLE IF NOT EXISTS assets (
   id SERIAL PRIMARY KEY,
   campaign_id INTEGER NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,
@@ -28,7 +26,7 @@ CREATE TABLE IF NOT EXISTS assets (
   created_at TIMESTAMP DEFAULT NOW()
 );
 
--- Indexes for better query performance
+-- Create indexes
 CREATE INDEX IF NOT EXISTS idx_campaigns_created_at ON campaigns(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_assets_campaign_id ON assets(campaign_id);
 CREATE INDEX IF NOT EXISTS idx_assets_phase ON assets(phase);
