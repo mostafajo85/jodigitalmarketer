@@ -83,7 +83,7 @@ const App: React.FC = () => {
     ar: {
       title: 'Nano',
       titleHighlight: 'Marketer',
-      subtitle: 'Pro',
+      subtitle: 'Pro (Beta v1.0)',
       settings: 'الإعدادات',
       myCampaigns: 'حملاتي',
       home: 'الرئيسية',
@@ -95,7 +95,7 @@ const App: React.FC = () => {
     en: {
       title: 'Nano',
       titleHighlight: 'Marketer',
-      subtitle: 'Pro',
+      subtitle: 'Pro (Beta v1.0)',
       settings: 'Settings',
       myCampaigns: 'My Campaigns',
       home: 'Home',
